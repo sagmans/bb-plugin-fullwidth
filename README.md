@@ -41,16 +41,14 @@ If a bb update changes these selectors, the plugin does nothing and bb shows
 its default layout. Update `src/layout.ts` and the roster in
 `scripts/smoke.ts` together.
 
-## Checks
+## Contribute
 
-```sh
-npm run typecheck
-npm run smoke
-npm run build
-```
+Read [CONTRIBUTING.md](CONTRIBUTING.md) before you send a change. It tells you
+how to set up the Git hooks and which checks must pass. Coding agents read
+[AGENTS.md](AGENTS.md).
 
-Run `scripts/setup-hooks` once after you clone. The `pre-push` hook runs the
-same checks and `npm audit`.
+Report vulnerabilities as [SECURITY.md](SECURITY.md) tells you, not in a public
+issue.
 
 ## License
 
