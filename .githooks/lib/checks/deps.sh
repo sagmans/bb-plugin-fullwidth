@@ -81,8 +81,12 @@ copy_tree() {
 }
 
 # scan_copy <dir> -- run the scanner on the copy; a subshell keeps the cwd.
+# The scanner runs from the parent of the copy, never inside it: a tool
+# manager shim (mise, asdf) loads config from the working directory, so the
+# pushed tree's own config would be parsed or refused as untrusted, and that
+# refusal exits 1, which reads as a vulnerability finding.
 scan_copy() {
-    (cd "$1" && run_with_timeout "$SCANNER_TIMEOUT_SECONDS" "$SCANNER" scan source -r . "${SCANNER_FLAGS[@]}")
+    (cd "$(dirname -- "$1")" && run_with_timeout "$SCANNER_TIMEOUT_SECONDS" "$SCANNER" scan source -r "$(basename -- "$1")" "${SCANNER_FLAGS[@]}")
 }
 
 lock_globs=()
