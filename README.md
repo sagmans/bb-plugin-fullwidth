@@ -51,3 +51,7 @@ npm run build
 
 Run `scripts/setup-hooks` once after you clone. The `pre-push` hook runs the
 same checks and `npm audit`.
+
+## License
+
+MIT. See [LICENSE](LICENSE).
