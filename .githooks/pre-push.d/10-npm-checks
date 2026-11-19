@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+# Repository checks run once per pushed tip: the same entry points a developer
+# runs by hand (package.json scripts), so the push gate and local use never
+# drift. Fails closed: a missing npm or a failing step blocks the push.
+set -euo pipefail
+. "${HOOK_HELPERS:?run from .githooks (scripts/setup-hooks)}"
+
+# Bounds so a hung registry or build ends the push instead of blocking it.
+INSTALL_TIMEOUT_SECONDS=300
+STEP_TIMEOUT_SECONDS=300
+# Any advisory blocks, matching the repo's zero-vulnerability baseline.
+AUDIT_LEVEL=low
+# Separate from install: the audit is a registry round trip with its own failure mode.
+AUDIT_TIMEOUT_SECONDS=120
+
+command -v npm >/dev/null || { echo "pre-push: npm is missing" >&2; exit 1; }
+
+# Validates git's ref lines and fails closed on malformed input; not dead code
+# even though its output is discarded.
+pushed_shas <"$HOOK_STDIN_FILE" >/dev/null || exit 1
+tips=''
+while read -r _lr local_sha _rr _rs; do
+  [ -n "$local_sha" ] || continue
+  is_null_oid "$local_sha" && continue
+  case " $tips " in *" $local_sha "*) continue ;; esac
+  tips="$tips $local_sha"
+done <"$HOOK_STDIN_FILE"
+
+# Runs in the at_sha working copy; installs from the committed lockfile only.
+run_checks() {
+  run_step 'npm ci' "$INSTALL_TIMEOUT_SECONDS" npm ci --ignore-scripts || return 1
+  run_step 'typecheck' "$STEP_TIMEOUT_SECONDS" npm run --silent typecheck || return 1
+  run_step 'build' "$STEP_TIMEOUT_SECONDS" npm run --silent build || return 1
+  run_step 'smoke' "$STEP_TIMEOUT_SECONDS" npm run --silent smoke || return 1
+  run_step 'npm audit' "$AUDIT_TIMEOUT_SECONDS" npm audit --audit-level "$AUDIT_LEVEL" || return 1
+}
+
+for c in $tips; do at_sha "$c" run_checks || exit 1; done
