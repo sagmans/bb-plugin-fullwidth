@@ -1,0 +1,20 @@
+{
+  // skipLibCheck: the SDK's bundled d.ts imports better-sqlite3 and hono types
+  // for APIs this layout-only plugin never uses. Installing them just to check
+  // unused declarations would add supply-chain surface for no benefit.
+  "compilerOptions": {
+    "strict": true,
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+    "lib": ["ES2022", "DOM"],
+    "types": ["node"],
+    "noEmit": true,
+    // allowImportingTsExtensions: scripts/smoke.ts runs under Node's native
+    // type stripping, which needs explicit .ts extensions in import paths.
+    "allowImportingTsExtensions": true,
+    "skipLibCheck": true
+  },
+  "include": ["server.ts", "app.tsx", "src", "scripts"]
+}

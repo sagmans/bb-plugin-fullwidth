@@ -1,0 +1,32 @@
+{
+  "name": "bb-plugin-fullwidth",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "bb": ">=0.50",
+    "bbPluginSdk": ">=0.6.132",
+    "node": ">=22.18"
+  },
+  "bb": {
+    "name": "bb Full Width",
+    "description": "Lets the thread transcript and composer use the full pane width, so messages line up with full-width tables.",
+    "branding": {
+      "icon": "./assets/icon.svg"
+    },
+    "server": "./server.ts",
+    "app": "./app.tsx",
+    "skills": []
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "build": "bb plugin build .",
+    "smoke": "node scripts/smoke.ts"
+  },
+  "devDependencies": {
+    "@get-bb/plugin-sdk": "0.6.140",
+    "@types/node": "22.19.17",
+    "@types/react": "19.2.14",
+    "typescript": "5.9.3"
+  }
+}
