@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+# Format and lint check on exactly what is being committed. It reads the index,
+# not the working tree, so partial staging cannot hide a failure. Fails closed:
+# a missing local Biome or any finding blocks the commit.
+set -euo pipefail
+# shellcheck source=.githooks/lib/helpers.sh
+. "${HOOK_HELPERS:?run from .githooks (scripts/setup-hooks)}"
+
+# Bound so a hung check ends the commit instead of blocking it.
+readonly CHECK_TIMEOUT_SECONDS=60
+# Prefix of this run's scratch copy; the cleanup guard matches it before removal.
+readonly SCRATCH_PREFIX=fullwidth-staged
+
+root=$(git rev-parse --show-toplevel)
+biome="$root/node_modules/.bin/biome"
+[[ -x "$biome" ]] || {
+  echo "pre-commit: local Biome is missing; run npm ci --ignore-scripts" >&2
+  exit 1
+}
+
+scratch=$(mktemp -d "${TMPDIR:-/tmp}/$SCRATCH_PREFIX.XXXXXX")
+cleanup() {
+  # Only this run's copy is temporary; check the name before removing it.
+  if [[ -d "$scratch" && "${scratch##*/}" == "$SCRATCH_PREFIX".* ]]; then
+    rm -r -- "$scratch"
+  fi
+}
+trap cleanup EXIT
+
+# A staged symlink could point the scanner outside the copy, so refuse it.
+if staged_git ls-files --stage | grep -q '^120000 '; then
+  echo "pre-commit: staged symlinks are not allowed" >&2
+  exit 1
+fi
+staged_git checkout-index --all --prefix="$scratch/"
+# The copy has no .git, so ignore-file handling is off and biome.json excludes apply.
+run_step 'staged format and lint' "$CHECK_TIMEOUT_SECONDS" \
+  "$biome" check --vcs-enabled=false --error-on-warnings --config-path="$scratch/biome.json" "$scratch"

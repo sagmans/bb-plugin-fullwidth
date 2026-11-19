@@ -3,6 +3,7 @@
 # runs by hand (package.json scripts), so the push gate and local use never
 # drift. Fails closed: a missing npm or a failing step blocks the push.
 set -euo pipefail
+# shellcheck source=.githooks/lib/helpers.sh
 . "${HOOK_HELPERS:?run from .githooks (scripts/setup-hooks)}"
 
 # Bounds so a hung registry or build ends the push instead of blocking it.
@@ -29,6 +30,7 @@ done <"$HOOK_STDIN_FILE"
 # Runs in the at_sha working copy; installs from the committed lockfile only.
 run_checks() {
   run_step 'npm ci' "$INSTALL_TIMEOUT_SECONDS" npm ci --ignore-scripts || return 1
+  run_step 'lint' "$STEP_TIMEOUT_SECONDS" npm run --silent lint || return 1
   run_step 'typecheck' "$STEP_TIMEOUT_SECONDS" npm run --silent typecheck || return 1
   run_step 'build' "$STEP_TIMEOUT_SECONDS" npm run --silent build || return 1
   run_step 'smoke' "$STEP_TIMEOUT_SECONDS" npm run --silent smoke || return 1

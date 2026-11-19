@@ -5,7 +5,7 @@
 // DOM). An imported app.css would not work here: its lifetime follows the
 // plugin's own rendered UI, not the whole app window.
 import { definePluginApp } from "@get-bb/plugin-sdk/app";
-import { STYLE_ELEMENT_ID, buildLayoutCss } from "./src/layout.ts";
+import { buildLayoutCss, STYLE_ELEMENT_ID } from "./src/layout.ts";
 
 /** Content script id; unique within this plugin. */
 const CONTENT_SCRIPT_ID = "fullwidth-layout";

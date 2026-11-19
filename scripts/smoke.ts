@@ -2,10 +2,10 @@
 // edit to the selectors or the CSS fails in seconds, before any build.
 
 import {
+  buildLayoutCss,
   STYLE_ELEMENT_ID,
   UNCAPPED_MAX_WIDTH,
   WIDTH_CAPPED_SELECTORS,
-  buildLayoutCss,
 } from "../src/layout.ts";
 
 // The intended roster: dropping a selector would silently bring back a
