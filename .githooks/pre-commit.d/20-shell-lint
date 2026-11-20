@@ -1,0 +1,49 @@
+#!/usr/bin/env bash
+# Shell lint on exactly what is being committed: the repository's own hook
+# checks and the hook installer guard every commit and push, so a quoting or
+# word-splitting bug there weakens the gate itself. Reads the index, not the
+# working tree. Fails closed: a missing shellcheck or shfmt blocks the commit.
+# setup-hooks is a shared template file, so it is linted but keeps its format.
+set -euo pipefail
+# shellcheck source=.githooks/lib/helpers.sh
+. "${HOOK_HELPERS:?run from .githooks (scripts/setup-hooks)}"
+
+# Bound so a hung check ends the commit instead of blocking it.
+readonly CHECK_TIMEOUT_SECONDS=60
+# Prefix of this run's scratch copy; the cleanup guard matches it before removal.
+readonly SCRATCH_PREFIX=fullwidth-shell
+readonly SHELL_PATHSPECS=('.githooks/*.d/*' 'scripts/setup-hooks' 'scripts/lint-sh')
+
+for tool in shellcheck shfmt; do
+  command -v "$tool" >/dev/null || {
+    echo "pre-commit: $tool is missing; install it (see AGENTS.md)" >&2
+    exit 1
+  }
+done
+
+# Only run when a shell script this repository owns is staged; pathspecs match
+# scripts/lint-sh so the trigger cannot drift from the linted file set.
+staged=$(staged_git diff --cached --name-only --diff-filter=ACMR -- "${SHELL_PATHSPECS[@]}") || exit 1
+[[ -n "$staged" ]] || exit 0
+
+scratch=$(mktemp -d "${TMPDIR:-/tmp}/$SCRATCH_PREFIX.XXXXXX")
+cleanup() {
+  # Only this run's copy is temporary; check the name before removing it.
+  if [[ -d "$scratch" && "${scratch##*/}" == "$SCRATCH_PREFIX".* ]]; then
+    rm -r -- "$scratch"
+  fi
+}
+trap cleanup EXIT
+
+# A staged symlink could point the linters outside the copy, so refuse it.
+staged_git ls-files --stage >"$scratch/index-modes"
+if grep -q '^120000 ' "$scratch/index-modes"; then
+  echo "pre-commit: staged symlinks are not allowed" >&2
+  exit 1
+fi
+
+staged_git checkout-index --all --prefix="$scratch/tree/"
+cd "$scratch/tree"
+# scripts/lint-sh is the one definition of the files and flags, shared with
+# npm run lint at push time; invoking it directly avoids booting npm.
+run_step 'shell lint' "$CHECK_TIMEOUT_SECONDS" bash scripts/lint-sh

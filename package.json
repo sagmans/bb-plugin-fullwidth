@@ -20,7 +20,8 @@
     "skills": []
   },
   "scripts": {
-    "lint": "biome check . --error-on-warnings",
+    "lint": "biome check . --error-on-warnings && npm run --silent lint:sh",
+    "lint:sh": "bash scripts/lint-sh",
     "format": "biome check --write .",
     "typecheck": "tsc --noEmit",
     "build": "bb plugin build .",

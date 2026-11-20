@@ -13,6 +13,7 @@ is frontend only: one content script adds one `<style>` element.
 | `app.tsx` | Content script: adds the `<style>` on mount, removes it on dispose. |
 | `server.ts` | Empty backend. bb requires a server entry. |
 | `scripts/smoke.ts` | Release gate for `src/layout.ts`. Runs without bb. |
+| `scripts/lint-sh` | Shell lint and format gate (`shellcheck` + `shfmt`) for tracked shell scripts. |
 | `.githooks/` | Git hooks. See "Hooks" below. |
 | `dist/` | Build output. Generated and ignored. Do not edit. |
 
@@ -21,7 +22,8 @@ is frontend only: one content script adds one `<style>` element.
 ```sh
 scripts/setup-hooks          # once per clone
 npm ci --ignore-scripts      # install from the lockfile
-npm run lint                 # Biome format + lint check
+npm run lint                 # Biome + shell lint and format check
+npm run lint:sh              # shellcheck + shfmt on tracked shell scripts
 npm run format               # Biome safe fixes
 npm run typecheck
 npm run smoke
@@ -60,7 +62,9 @@ Check the thread page at the bottom and after you scroll up. Check also with
 `scripts/setup-hooks` sets `core.hooksPath=.githooks` for this clone.
 
 - `pre-commit`: secret scan, whitespace and Markdown lint, then
-  `.githooks/pre-commit.d/10-staged-lint` (Biome on the full staged snapshot).
+  `.githooks/pre-commit.d/10-staged-lint` (Biome on the full staged snapshot)
+  and `.githooks/pre-commit.d/20-shell-lint` (`shellcheck` and `shfmt` on the
+  staged snapshot when shell scripts change).
 - `commit-msg`: Conventional Commits subject, a body, and `Signed-off-by`.
   [.githooks/GIT_CONVENTION.md](.githooks/GIT_CONVENTION.md) has the rules.
 - `pre-push`: signature, DCO, message and secret scan on each pushed commit,

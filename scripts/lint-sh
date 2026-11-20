@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+# Shell lint for the scripts this repository tracks, shared by `npm run lint`
+# (push) and the staged pre-commit check. A developer may keep untracked local
+# checks in .githooks/<hook>.d/ (git runs every file there) that follow their
+# own format, so in a git checkout only tracked hook checks are judged. The
+# pre-commit copy of the index has no .git and holds tracked files only.
+# setup-hooks is a shared template file, so it is linted but keeps its format.
+set -euo pipefail
+
+for tool in shellcheck shfmt; do
+  command -v "$tool" >/dev/null || {
+    echo "lint-sh: $tool is missing; install it (see AGENTS.md)" >&2
+    exit 1
+  }
+done
+
+hooks=()
+if [[ -e .git ]]; then
+  list=$(mktemp "${TMPDIR:-/tmp}/lint-sh.XXXXXX")
+  trap '[[ -n "${list:-}" && "${list##*/}" == lint-sh.* ]] && rm -f -- "$list"' EXIT
+  git ls-files -z -- '.githooks/*.d/*' >"$list"
+  while IFS= read -r -d '' file; do
+    [[ -n "$file" ]] && hooks+=("$file")
+  done <"$list"
+else
+  shopt -s nullglob
+  hooks=(.githooks/*.d/*)
+fi
+[[ ${#hooks[@]} -gt 0 ]] || {
+  echo "lint-sh: no hook checks found" >&2
+  exit 1
+}
+
+shellcheck -x -- scripts/setup-hooks scripts/lint-sh "${hooks[@]}"
+shfmt -d -i 2 -- scripts/lint-sh "${hooks[@]}"

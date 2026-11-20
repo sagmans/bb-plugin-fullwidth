@@ -14,7 +14,10 @@ AUDIT_LEVEL=low
 # Separate from install: the audit is a registry round trip with its own failure mode.
 AUDIT_TIMEOUT_SECONDS=120
 
-command -v npm >/dev/null || { echo "pre-push: npm is missing" >&2; exit 1; }
+command -v npm >/dev/null || {
+  echo "pre-push: npm is missing" >&2
+  exit 1
+}
 
 # Validates git's ref lines and fails closed on malformed input; not dead code
 # even though its output is discarded.
